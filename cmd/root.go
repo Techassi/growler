@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/Techassi/growler/internal/queue"
+	"github.com/Techassi/growler/internal/crawl"
 	"github.com/Techassi/growler/internal/workerpool"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -13,6 +14,7 @@ import (
 )
 
 var cfgFile string
+var urlFlag string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -21,13 +23,14 @@ var rootCmd = &cobra.Command{
 	Long: 	`A longer description that spans multiple lines and likely contains
 			examples and usage of using your application. For example:`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hello")
 		q, err := queue.NewQueue(1000)
+		q.URLJob(urlFlag)
+		fmt.Println(urlFlag)
 		if err != nil {
 			panic(err)
 		}
 
-		p := workerpool.NewWorkerPool(10, q)
+		p := workerpool.NewWorkerPool(100, q, crawl.Crawl)
 		p.Start()
 	},
 }
@@ -49,6 +52,7 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.growler.yaml)")
+	rootCmd.PersistentFlags().StringVar(&urlFlag, "url", "", "The URL used as an entry point")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
