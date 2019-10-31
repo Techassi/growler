@@ -18,7 +18,7 @@ type Job struct {
 // NewQueue creates a new queue with n max items in it
 func NewQueue(max int) (Queue, error) {
 	if max < 0 {
-		return Queue{}, errors.New(fmt.Sprintf("%d is smaller than 0. Provide a value greater than 0"))
+		return Queue{}, errors.New(fmt.Sprintf("%d is smaller than 0. Provide a value greater than 0", max))
 	}
 
 	return Queue{

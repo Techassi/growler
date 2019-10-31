@@ -25,12 +25,16 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		q, err := queue.NewQueue(1000)
 		q.URLJob(urlFlag)
-		fmt.Println(urlFlag)
 		if err != nil {
 			panic(err)
 		}
 
-		p := workerpool.NewWorkerPool(100, q, crawl.Crawl)
+		p := workerpool.NewWorkerPool(10, q, crawl.Crawl)
+		// err = p.On("init", workerInit)
+		// if err != nil {
+		// 	panic(err)
+		// }
+
 		p.Start()
 	},
 }
@@ -45,18 +49,9 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.growler.yaml)")
+	// cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&urlFlag, "url", "", "The URL used as an entry point")
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -83,4 +78,8 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+}
+
+func workerInit(pool *workerpool.WorkerPool) {
+	fmt.Println(pool.Queue)
 }
