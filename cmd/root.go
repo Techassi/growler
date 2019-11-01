@@ -15,25 +15,31 @@ import (
 
 var cfgFile string
 var urlFlag string
+var queueFlag int
+var workersFlag int
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   	"growler",
-	Short: 	"A brief description of your application",
-	Long: 	`A longer description that spans multiple lines and likely contains
-			examples and usage of using your application. For example:`,
+	Short: 	"growler is a web crawler written in Go",
+	Long: 	`growler crawls the web propagating from the given url (seed)
+			in a parallized manner with scalable queue and workers.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		q, err := queue.NewQueue(1000)
+		q, err := queue.NewQueue(queueFlag)
 		q.URLJob(urlFlag)
 		if err != nil {
 			panic(err)
 		}
 
-		p := workerpool.NewWorkerPool(10, q, crawl.Crawl)
-		// err = p.On("init", workerInit)
-		// if err != nil {
-		// 	panic(err)
-		// }
+		p, pool_err := workerpool.NewWorkerPool(workersFlag, q, crawl.Crawl)
+		if pool_err != nil {
+			panic(err)
+		}
+
+		err = p.On("init", workerInit)
+		if err != nil {
+			panic(err)
+		}
 
 		p.Start()
 	},
@@ -51,7 +57,8 @@ func Execute() {
 func init() {
 	// cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&urlFlag, "url", "", "The URL used as an entry point")
-
+	rootCmd.PersistentFlags().IntVar(&queueFlag, "queue", 1000, "The max amount of items in queue at one time")
+	rootCmd.PersistentFlags().IntVar(&workersFlag, "workers", 10, "The max amount of cuncurrent workers running")
 }
 
 // initConfig reads in config file and ENV variables if set.

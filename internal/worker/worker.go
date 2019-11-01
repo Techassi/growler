@@ -9,19 +9,15 @@ import (
 type Worker struct {
 	ID                uuid.UUID
 	Action 	          func(interface{}) interface{}
-	ProcessingChannel chan<- bool
-	FinishedChannel   chan<- uuid.UUID
 	JobChannel        <-chan queue.Job
 	ResultChannel     chan<- interface{}
 	LifecycleChannel  chan<- string
 }
 
-func NewWorker(pC chan<- bool, fC chan<- uuid.UUID, jC <-chan queue.Job, rC chan<- interface{}, lC chan<- string, ac func(interface{}) interface{}) Worker {
+func NewWorker(jC <-chan queue.Job, rC chan<- interface{}, lC chan<- string, ac func(interface{}) interface{}) Worker {
 	return Worker{
 		ID:                uuid.New(),
 		Action:            ac,
-		ProcessingChannel: pC,
-		FinishedChannel:   fC,
 		JobChannel:        jC,
 		ResultChannel:     rC,
 		LifecycleChannel:  lC,
@@ -29,13 +25,17 @@ func NewWorker(pC chan<- bool, fC chan<- uuid.UUID, jC <-chan queue.Job, rC chan
 }
 
 func (worker Worker) Run() {
-	// declare as finished to initiate poll
-	worker.FinishedChannel <- worker.ID
-	worker.LifecycleChannel <- "init"
+	// Lifecycle worker:init
+	worker.LifecycleChannel <- "worker:init"
 
 	for job := range worker.JobChannel {
-		worker.ProcessingChannel <- true
+		// Lifecycle worker:processing
+		worker.LifecycleChannel <- "worker:processing"
+
+		// do work
 		worker.ResultChannel <- worker.Action(job)
-		worker.FinishedChannel <- worker.ID
+
+		// Lifecycle worker:finished
+		worker.LifecycleChannel <- "worker:finished"
 	}
 }

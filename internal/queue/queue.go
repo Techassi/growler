@@ -15,10 +15,10 @@ type Job struct {
 	URL      string
 }
 
-// NewQueue creates a new queue with n max items in it
+// NewQueue creates a new queue with x max items in it
 func NewQueue(max int) (Queue, error) {
 	if max < 0 {
-		return Queue{}, errors.New(fmt.Sprintf("%d is smaller than 0. Provide a value greater than 0", max))
+		return Queue{}, errors.New(fmt.Sprintf("Provide a value greater than 0 for parameter 'max'"))
 	}
 
 	return Queue{
