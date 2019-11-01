@@ -15,7 +15,7 @@ type Job struct {
 	URL      string
 }
 
-// NewQueue creates a new queue with x max items in it
+// NewQueue creates a new queue with N max items in it
 func NewQueue(max int) (Queue, error) {
 	if max < 0 {
 		return Queue{}, errors.New(fmt.Sprintf("Provide a value greater than 0 for parameter 'max'"))
@@ -29,6 +29,7 @@ func NewQueue(max int) (Queue, error) {
 
 // Poll takes the first element in queue and returns it or returns an error if
 // the queue is empty
+// TODO: This is 9/10 a huge performance bottleneck
 func (queue *Queue) Poll() (Job, error) {
 	// check if there are items in the queue
 	if len(queue.Items) == 0 {
@@ -56,13 +57,12 @@ func (queue *Queue) Queue(job Job) (Job, error) {
 }
 
 func (queue *Queue) URLJob(url_string string) error {
-	job, queue_err := queue.Queue(Job{
+	_, err := queue.Queue(Job{
 		Priority: 1,
 		URL: url_string,
 	})
-	if queue_err != nil {
-		fmt.Println(job)
-		return queue_err
+	if err != nil {
+		return err
 	}
 
 	return nil

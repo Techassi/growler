@@ -32,7 +32,7 @@ func (worker Worker) Run() {
 		// Lifecycle worker:processing
 		worker.LifecycleChannel <- "worker:processing"
 
-		// do work
+		// do the actual work
 		worker.ResultChannel <- worker.Action(job)
 
 		// Lifecycle worker:finished

@@ -7,23 +7,26 @@ import (
 
 	"github.com/Techassi/growler/internal/queue"
 	"github.com/Techassi/growler/internal/crawl"
+	"github.com/Techassi/growler/internal/events"
 	"github.com/Techassi/growler/internal/workerpool"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-var urlFlag string
-var queueFlag int
-var workersFlag int
+var (
+	cfgFile string
+	urlFlag string
+	queueFlag int
+	workersFlag int
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   	"growler",
 	Short: 	"growler is a web crawler written in Go",
 	Long: 	`growler crawls the web propagating from the given url (seed)
-			in a parallized manner with scalable queue and workers.`,
+in a parallized manner with scalable queue and workers.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		q, err := queue.NewQueue(queueFlag)
 		q.URLJob(urlFlag)
@@ -36,7 +39,7 @@ var rootCmd = &cobra.Command{
 			panic(err)
 		}
 
-		err = p.On("init", workerInit)
+		err = p.On("worker:processing", events.WorkerInit)
 		if err != nil {
 			panic(err)
 		}
@@ -57,6 +60,8 @@ func Execute() {
 func init() {
 	// cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&urlFlag, "url", "", "The URL used as an entry point")
+	// workaround (see https://github.com/spf13/cobra/issues/921)
+	cobra.MarkFlagRequired(rootCmd.PersistentFlags(), "url")
 	rootCmd.PersistentFlags().IntVar(&queueFlag, "queue", 1000, "The max amount of items in queue at one time")
 	rootCmd.PersistentFlags().IntVar(&workersFlag, "workers", 10, "The max amount of cuncurrent workers running")
 }
@@ -85,8 +90,4 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
-}
-
-func workerInit(pool *workerpool.WorkerPool) {
-	fmt.Println(pool.Queue)
 }
