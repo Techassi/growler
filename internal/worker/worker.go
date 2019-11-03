@@ -30,12 +30,12 @@ func (worker Worker) Run() {
 
 	for job := range worker.JobChannel {
 		// Lifecycle worker:processing
-		worker.LifecycleChannel <- "worker:processing"
+		worker.LifecycleChannel <- "worker:process"
 
 		// do the actual work
 		worker.ResultChannel <- worker.Action(job)
 
 		// Lifecycle worker:finished
-		worker.LifecycleChannel <- "worker:finished"
+		worker.LifecycleChannel <- "worker:finish"
 	}
 }

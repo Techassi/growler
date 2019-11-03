@@ -36,6 +36,8 @@ Possible arguments
 Argument | Explanation
 --- | ---
 `--url`| *Required.* The url used as the entry point (seed) to start crawling
+`--workers`| *Optional.* The amount of workers to be created
+`--queue`| *Optional.* The size of the queue
 
 More coming soon.
 
@@ -58,6 +60,7 @@ panic: -1 is smaller than 0. Provide a value greater than 0
 
 ### WorkerPool
 #### Initialize
+
 ```golang
 p := workerpool.NewWorkerPool(10, q, action)
 ```
@@ -77,8 +80,9 @@ p.Start()
 This starts the worker pool and the workers get created and start polling jobs from the queue.
 
 ### Lifecycle Events
+
 ```golang
-err := p.On("init", workerInit)
+err := p.On("worker:init", workerInit)
 if err != nil {
 	panic(err)
 }
@@ -86,9 +90,12 @@ if err != nil {
 
 You can attach event function (handlers) on lifecycle events emitted by workers through the worker pool. Call `On(event string, action func(pool *workerpool.WorkerPool))` to subscribe to an event called `event`. Every time this event occurres `action` will get called.
 
-Possible events
-- init: Triggred when the worker is being created / initialized.
+Possible worker events:
+- `worker:init` Triggred when the worker is started / initialized.
+- `worker:process` Triggered when the worker starts doing work.
+- `worker:finish` Triggred when the worker is done with its work.
 
 ## Current Development
 
 - Lifecycle Events
+- Check for URL duplicates

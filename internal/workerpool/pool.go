@@ -34,7 +34,7 @@ type Config struct {
 	Verbose bool
 }
 
-// NewWorkerPool creates a new worker pool with N max workers and two channels
+// NewWorkerPool creates a new worker pool with N max workers and four channels
 // for communication between the workers and the pool
 func NewWorkerPool(max int, q queue.Queue, action func(interface{}) interface{}) (WorkerPool, error) {
 	if max < 0 {
@@ -117,9 +117,9 @@ func (pool *WorkerPool) do(event string) {
 		if err == nil {
 			pool.JobChannel <- poll
 		}
-	case "worker:processing":
+	case "worker:process":
 		// fmt.Println("worker:processing")
-	case "worker:finished":
+	case "worker:finish":
 		// fmt.Println("worker:finished")
 
 		// When one worker finished his work poll the queue for a new job

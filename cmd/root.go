@@ -39,7 +39,7 @@ in a parallized manner with scalable queue and workers.`,
 			panic(err)
 		}
 
-		err = p.On("worker:processing", events.WorkerInit)
+		err = p.On("worker:process", events.WorkerProcess)
 		if err != nil {
 			panic(err)
 		}

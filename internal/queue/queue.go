@@ -61,11 +61,8 @@ func (queue *Queue) URLJob(url_string string) error {
 		Priority: 1,
 		URL: url_string,
 	})
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func (queue *Queue) QueueList(l interface{}) {

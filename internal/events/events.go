@@ -1,9 +1,11 @@
 package events
 
 import (
+	"fmt"
+
 	"github.com/Techassi/growler/internal/workerpool"
 )
 
-func WorkerInit(pool *workerpool.WorkerPool) {
+func WorkerProcess(pool *workerpool.WorkerPool) {
 	fmt.Println(len(pool.Queue.Items))
 }
