@@ -1,11 +1,23 @@
 package events
 
 import (
+	"os"
 	"fmt"
 
 	"github.com/Techassi/growler/internal/workerpool"
 )
 
-func WorkerProcess(pool *workerpool.WorkerPool) {
-	fmt.Println(len(pool.Queue.Items))
+var f *File
+var err error
+
+func init() {
+	f, err = os.Create("links.txt")
+	if err != nil {
+		panic(err)
+	}
+}
+
+func WorkerFinish(pool workerpool.Event) {
+	_, e := f.WriteString(fmt.Sprintf("Hello\n"))
+	f.Sync()
 }

@@ -11,10 +11,10 @@ type Worker struct {
 	Action 	          func(interface{}) interface{}
 	JobChannel        <-chan queue.Job
 	ResultChannel     chan<- interface{}
-	LifecycleChannel  chan<- string
+	LifecycleChannel  chan<- models.Event
 }
 
-func NewWorker(jC <-chan queue.Job, rC chan<- interface{}, lC chan<- string, ac func(interface{}) interface{}) Worker {
+func NewWorker(jC <-chan queue.Job, rC chan<- interface{}, lC chan<- models.Event, ac func(interface{}) interface{}) Worker {
 	return Worker{
 		ID:                uuid.New(),
 		Action:            ac,
@@ -26,16 +26,25 @@ func NewWorker(jC <-chan queue.Job, rC chan<- interface{}, lC chan<- string, ac 
 
 func (worker Worker) Run() {
 	// Lifecycle worker:init
-	worker.LifecycleChannel <- "worker:init"
+	worker.LifecycleChannel <- models.Event{
+		Type: "worker:init",
+		Worker: worker,
+	}
 
 	for job := range worker.JobChannel {
 		// Lifecycle worker:processing
-		worker.LifecycleChannel <- "worker:process"
+		worker.LifecycleChannel <- models.Event{
+			Type: "worker:process",
+			Worker: worker,
+		}
 
 		// do the actual work
 		worker.ResultChannel <- worker.Action(job)
 
 		// Lifecycle worker:finished
-		worker.LifecycleChannel <- "worker:finish"
+		worker.LifecycleChannel <- models.Event{
+			Type: "worker:finish",
+			Worker: worker,
+		}
 	}
 }

@@ -21,12 +21,12 @@ type WorkerPool struct {
 	ShutdownChannel   chan bool
 	JobChannel        chan queue.Job
 	ResultChannel     chan interface{}
-	LifecycleChannel  chan string
+	LifecycleChannel  chan Event
 }
 
 type Event struct {
 	Type       string
-	Worker    *worker.Worker
+	Worker     worker.Worker
 	Pool      *WorkerPool
 }
 
@@ -50,16 +50,22 @@ func NewWorkerPool(max int, q queue.Queue, action func(interface{}) interface{})
 		ShutdownChannel:   make(chan bool, 1),
 		JobChannel:        make(chan queue.Job, max),
 		ResultChannel:     make(chan interface{}, max),
-		LifecycleChannel:  make(chan string, max),
+		LifecycleChannel:  make(chan Event, max),
 	}, nil
 }
 
 // Start starts the worker pool and handles the communication
 func (pool *WorkerPool) Start() {
+	// Lifecycle pool:init
+	pool.LifecycleChannel <- "pool:init"
+
 	// setup workers based on pool.MaxWorkers
 	for i := 0; i < pool.MaxWorkers; i++ {
 		worker := worker.NewWorker(pool.JobChannel, pool.ResultChannel, pool.LifecycleChannel, pool.Action)
 		pool.AddWorker(worker.ID)
+
+		// Lifecycle pool:addworker
+		// pool.LifecycleChannel <- "pool:addworker"
 
 		go worker.Run()
 	}
@@ -103,11 +109,11 @@ func (pool *WorkerPool) On(event string, action func(*WorkerPool)) (error) {
 
 // Executes a provided function. Used to trigger event function on
 // Lifecycle events
-func (pool *WorkerPool) do(event string) {
-	e, ok := pool.Events[event]
+func (pool *WorkerPool) do(event Event) {
+	e, ok := pool.Events[event.Type]
 
 	// default event functions
-	switch event {
+	switch event.Type {
 	case "worker:init":
 		// fmt.Println("worker:init")
 
@@ -128,8 +134,12 @@ func (pool *WorkerPool) do(event string) {
 		if err == nil {
 			pool.JobChannel <- poll
 		}
+	case "pool:init":
+		fmt.Println("pool:init")
+	case "pool:addworker":
+		fmt.Println("pool:addworker")
 	}
 
 	// execute custom event function registered for event
-	if ok { e(pool) }
+	if ok { e(event) }
 }
