@@ -39,7 +39,12 @@ in a parallized manner with scalable queue and workers.`,
 			panic(err)
 		}
 
-		err = p.On("worker:finish", events.WorkerProcess)
+		err = p.SetMode("polite")
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		err = p.On("worker:finish", events.WorkerFinish)
 		if err != nil {
 			panic(err)
 		}

@@ -2,16 +2,17 @@ package crawl
 
 import (
 	"log"
+	"time"
 	"net/http"
 
 	"github.com/PuerkitoBio/goquery"
 	valid "github.com/asaskevich/govalidator"
 
-	"github.com/Techassi/growler/internal/queue"
+	m "github.com/Techassi/growler/internal/models"
 )
 
-func Crawl(data interface{}) (interface{}) {
-	d := data.(queue.Job)
+func Crawl(data interface{}, mode string) (interface{}) {
+	d := data.(m.Job)
 
 	res, err := http.Get(d.URL)
 	if err != nil {
@@ -31,6 +32,10 @@ func Crawl(data interface{}) (interface{}) {
 			links = append(links, href)
 		}
   	})
+
+	if mode == "polite" {
+		time.Sleep(2 * time.Second)
+	}
 
 	return links
 }

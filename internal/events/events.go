@@ -4,20 +4,22 @@ import (
 	"os"
 	"fmt"
 
-	"github.com/Techassi/growler/internal/workerpool"
+	m "github.com/Techassi/growler/internal/models"
 )
 
-var f *File
+var f *os.File
 var err error
 
 func init() {
-	f, err = os.Create("links.txt")
+	f, err = os.Create("events.txt")
 	if err != nil {
 		panic(err)
 	}
 }
 
-func WorkerFinish(pool workerpool.Event) {
-	_, e := f.WriteString(fmt.Sprintf("Hello\n"))
-	f.Sync()
+func WorkerFinish(event m.Event) {
+	_, e := f.WriteString(fmt.Sprintf("Worker %s finished\n", event.Worker.ID.String()))
+	if e == nil {
+		f.Sync()
+	}
 }

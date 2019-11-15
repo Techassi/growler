@@ -7,139 +7,26 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/Techassi/growler/internal/queue"
-	"github.com/Techassi/growler/internal/worker"
-	"github.com/Techassi/growler/internal/helper"
+	m "github.com/Techassi/growler/internal/models"
 )
-
-type WorkerPool struct {
-	Queue             queue.Queue
-	Action            func(interface{}) interface{}
-	MaxWorkers        int
-	Events            map[string] func(*WorkerPool)
-	ActiveWorkers     map[uuid.UUID]time.Time
-	ShutdownChannel   chan bool
-	JobChannel        chan queue.Job
-	ResultChannel     chan interface{}
-	LifecycleChannel  chan Event
-}
-
-type Event struct {
-	Type       string
-	Worker     worker.Worker
-	Pool      *WorkerPool
-}
-
-type Config struct {
-	Verbose bool
-}
 
 // NewWorkerPool creates a new worker pool with N max workers and four channels
 // for communication between the workers and the pool
-func NewWorkerPool(max int, q queue.Queue, action func(interface{}) interface{}) (WorkerPool, error) {
+func NewWorkerPool(max int, q m.Queue, action func(interface{}, string) interface{}) (m.WorkerPool, error) {
 	if max < 0 {
-		return WorkerPool{}, errors.New(fmt.Sprintf("Provide a value greater than 0 for parameter 'max'"))
+		return m.WorkerPool{}, errors.New(fmt.Sprintf("Provide a value greater than 0 for parameter 'max'"))
 	}
 
-	return WorkerPool{
+	return m.WorkerPool{
 		Queue: q,
 		Action: action,
 		MaxWorkers:        max,
-		Events:            make(map[string] func(*WorkerPool)),
+		Mode:			   "polite",
+		Events:            make(map[string] func(m.Event)),
 		ActiveWorkers:     make(map[uuid.UUID]time.Time, max),
 		ShutdownChannel:   make(chan bool, 1),
-		JobChannel:        make(chan queue.Job, max),
+		JobChannel:        make(chan m.Job, max),
 		ResultChannel:     make(chan interface{}, max),
-		LifecycleChannel:  make(chan Event, max),
+		LifecycleChannel:  make(chan m.Event, max),
 	}, nil
-}
-
-// Start starts the worker pool and handles the communication
-func (pool *WorkerPool) Start() {
-	// Lifecycle pool:init
-	pool.LifecycleChannel <- "pool:init"
-
-	// setup workers based on pool.MaxWorkers
-	for i := 0; i < pool.MaxWorkers; i++ {
-		worker := worker.NewWorker(pool.JobChannel, pool.ResultChannel, pool.LifecycleChannel, pool.Action)
-		pool.AddWorker(worker.ID)
-
-		// Lifecycle pool:addworker
-		// pool.LifecycleChannel <- "pool:addworker"
-
-		go worker.Run()
-	}
-
-	// infinite loop (until canceled) for communication
-	for {
-		select {
-		case result := <-pool.ResultChannel:
-			pool.Queue.QueueList(result)
-		case event := <-pool.LifecycleChannel:
-			pool.do(event)
-		case shutdown := <-pool.ShutdownChannel:
-			fmt.Printf("Shutdown %t. Exiting...", shutdown)
-			break
-		}
-	}
-}
-
-// AddWorker adds a new worker and ActiveWorkers keeps track of all active
-// workers
-func (pool *WorkerPool) AddWorker(id uuid.UUID) (error) {
-	if _, ok := pool.ActiveWorkers[id]; ok {
-		pool.ActiveWorkers[id] = time.Now()
-
-		return nil
-	}
-
-	return errors.New(fmt.Sprintf("There is already a worker with id %v", id))
-}
-
-// On registers an event function getting triggered when x event is called by
-// LifecycleChannel
-func (pool *WorkerPool) On(event string, action func(*WorkerPool)) (error) {
-	if e, ok := pool.Events[event]; ok {
-		return errors.New(fmt.Sprintf("Already added function for event %s: %s", event, helper.GetFunctionName(e)))
-	}
-
-	pool.Events[event] = action
-	return nil
-}
-
-// Executes a provided function. Used to trigger event function on
-// Lifecycle events
-func (pool *WorkerPool) do(event Event) {
-	e, ok := pool.Events[event.Type]
-
-	// default event functions
-	switch event.Type {
-	case "worker:init":
-		// fmt.Println("worker:init")
-
-		// When one worker is initialized poll the queue for a new job
-		// and push it into the JobChannel
-		poll, err := pool.Queue.Poll()
-		if err == nil {
-			pool.JobChannel <- poll
-		}
-	case "worker:process":
-		// fmt.Println("worker:processing")
-	case "worker:finish":
-		// fmt.Println("worker:finished")
-
-		// When one worker finished his work poll the queue for a new job
-		// and push it into the JobChannel
-		poll, err := pool.Queue.Poll()
-		if err == nil {
-			pool.JobChannel <- poll
-		}
-	case "pool:init":
-		fmt.Println("pool:init")
-	case "pool:addworker":
-		fmt.Println("pool:addworker")
-	}
-
-	// execute custom event function registered for event
-	if ok { e(event) }
 }

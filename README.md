@@ -99,3 +99,4 @@ Possible worker events:
 
 - Lifecycle Events
 - Check for URL duplicates
+- Implementing Politeness Policy
