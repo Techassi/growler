@@ -2,6 +2,7 @@ package crawl
 
 import (
 	"log"
+	"fmt"
 	"time"
 	"net/http"
 
@@ -13,7 +14,7 @@ import (
 
 func Crawl(data interface{}, mode string) (interface{}) {
 	d := data.(m.Job)
-
+	fmt.Println(d.URL)
 	res, err := http.Get(d.URL)
 	if err != nil {
 		log.Fatal(err)

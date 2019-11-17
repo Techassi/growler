@@ -7,7 +7,7 @@ import (
 
 	"github.com/Techassi/growler/internal/queue"
 	"github.com/Techassi/growler/internal/crawl"
-	"github.com/Techassi/growler/internal/events"
+	// "github.com/Techassi/growler/internal/events"
 	"github.com/Techassi/growler/internal/workerpool"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -39,15 +39,15 @@ in a parallized manner with scalable queue and workers.`,
 			panic(err)
 		}
 
-		err = p.SetMode("polite")
+		err = p.SetMode("speed")
 		if err != nil {
 			fmt.Println(err)
 		}
 
-		err = p.On("worker:finish", events.WorkerFinish)
-		if err != nil {
-			panic(err)
-		}
+		// err = p.On("worker:finish", events.WorkerFinish)
+		// if err != nil {
+		// 	panic(err)
+		// }
 
 		p.Start()
 	},

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"os"
 	"fmt"
 	"errors"
 )
@@ -14,16 +13,6 @@ type Queue struct {
 type Job struct {
 	Priority int
 	URL      string
-}
-
-var f *os.File
-var err error
-
-func init() {
-	f, err = os.Create("links.txt")
-	if err != nil {
-		panic(err)
-	}
 }
 
 // Poll takes the first element in queue and returns it or returns an error if
@@ -68,14 +57,9 @@ func (queue *Queue) QueueList(l interface{}) {
 	links := l.([]string)
 
 	for _, link := range links {
-		queue.Queue(Job{
+		go queue.Queue(Job{
 			Priority: 1,
 			URL: link,
 		})
-
-		_, e := f.WriteString(fmt.Sprintf("%s\n", link))
-		if e == nil {
-			f.Sync()
-		}
 	}
 }
