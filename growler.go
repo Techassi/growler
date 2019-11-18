@@ -4,6 +4,7 @@ import (
 	"sync"
 	"bytes"
 	"errors"
+	"strings"
 	"net/url"
 
 	"github.com/PuerkitoBio/goquery"
@@ -15,6 +16,7 @@ import (
 type Collector struct {
 	UserAgent         string
 	MaxDepth          int
+	Delay             int
 	store            *storage.InMemory
 	worker           *httpWorker
 	wg               *sync.WaitGroup
@@ -35,6 +37,7 @@ var (
 	ErrDoubleSelector  = errors.New("A function with this selector was already registered")
 	ErrReadingFromBody = errors.New("Goquery couldn't read from body")
 	ErrEmptyResponse   = errors.New("The body of the response is empty")
+	ErrDepthExceeded   = errors.New("The depth of the current URL exceeds MaxDepth")
 )
 
 func NewCollector() *Collector {
@@ -47,6 +50,7 @@ func NewCollector() *Collector {
 func (c *Collector) Init() {
 	c.UserAgent = "growler - https://github.com/Techassi/growler"
 	c.MaxDepth = 0
+	c.Delay = 0
 	c.store = &storage.InMemory{}
 	c.store.Init()
 	c.worker = &httpWorker{}
@@ -56,7 +60,7 @@ func (c *Collector) Init() {
 }
 
 func (c *Collector) Visit(URL string) error {
-	return c.build(URL, 0, false)
+	return c.build(URL, false)
 }
 
 func (c *Collector) OnHTML(selector string, f func(CollectorHTMLNode)) {
@@ -74,28 +78,42 @@ func (c *Collector) OnHTML(selector string, f func(CollectorHTMLNode)) {
 	c.lock.Unlock()
 }
 
+func (c *Collector) SetDelay(d int) {
+	if d <= 0 {
+		return
+	}
+
+	c.Delay = d
+}
+
+func (c *Collector) SetMaxDepth(d int) {
+	if d <= 0 {
+		return
+	}
+
+	c.MaxDepth = d
+}
+
 func (c *Collector) Wait() {
 	c.wg.Wait()
 }
 
-func (c *Collector) build(u string, depth int, revisit bool) error {
-	c.checkRequest(u, depth, revisit)
-
-	pURL, err := url.Parse(u)
+func (c *Collector) build(u string, revisit bool) error {
+	pURL, err := c.checkRequest(u, revisit)
 	if err != nil {
 		return err
 	}
 
 	c.wg.Add(1)
-	go c.fetch(pURL, depth)
+	go c.fetch(pURL)
 
 	return nil
 }
 
-func (c *Collector) fetch(u *url.URL, depth int) error {
+func (c *Collector) fetch(u *url.URL) error {
 	defer c.wg.Done()
 
-	res, err := c.worker.Request(u, depth)
+	res, err := c.worker.Request(u, c.Delay)
 	if err != nil {
 		return err
 	}
@@ -110,24 +128,34 @@ func (c *Collector) fetch(u *url.URL, depth int) error {
 	return nil
 }
 
-func (c *Collector) checkRequest(u string, depth int, revisit bool) error {
+func (c *Collector) checkRequest(u string, revisit bool) (*url.URL, error) {
 	// Check if URL is empty. Throw ErrURLEmpty if so
 	if u == "" {
-		return ErrURLEmpty
+		return nil, ErrURLEmpty
 	}
 
 	// Check if depth is valid. Throw ErrDepthInvalid if not
-	if (depth > 0 && depth > c.MaxDepth) || depth < 0 {
-		return ErrDepthInvalid
+	if c.MaxDepth < 0 {
+		return nil, ErrDepthInvalid
 	}
 
 	// If we don't want to revisit the URL check if we already did. If so throw
 	// ErrAlreadyVisited
 	if !revisit && c.store.IsVisited(u) {
-		return ErrAlreadyVisited
+		return nil, ErrAlreadyVisited
 	}
 
-	return nil
+	pURL, err := url.Parse(u)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if depth of current URL is below MaxDepth
+	if strings.Count(pURL.Path, "/") > c.MaxDepth {
+		return nil, ErrDepthExceeded
+	}
+
+	return pURL, nil
 }
 
 func (c *Collector) checkHTTPStatusCode(res *response.Response) error {
