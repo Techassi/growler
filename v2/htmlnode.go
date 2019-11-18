@@ -1,5 +1,9 @@
 package growler
 
+import (
+	"golang.org/x/net/html"
+)
+
 type CollectorHTMLNode struct {
 	Name         string
 	Collector   *Collector
