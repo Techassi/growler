@@ -1,4 +1,4 @@
-module github.com/Techassi/growler/v2
+module github.com/Techassi/growler
 
 go 1.13
 

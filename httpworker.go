@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"net/http"
 
-	"github.com/Techassi/growler/v2/response"
+	"github.com/Techassi/growler/response"
 )
 
 type httpWorker struct {

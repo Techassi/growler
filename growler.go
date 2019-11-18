@@ -8,8 +8,8 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 
-	"github.com/Techassi/growler/v2/storage"
-	"github.com/Techassi/growler/v2/response"
+	"github.com/Techassi/growler/storage"
+	"github.com/Techassi/growler/response"
 )
 
 type Collector struct {
