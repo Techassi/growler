@@ -1,3 +1,5 @@
+package growler
+
 type CollectorHTMLNode struct {
 	Name         string
 	Collector   *Collector
