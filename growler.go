@@ -34,6 +34,7 @@ var (
 	ErrHTTPStatusCode  = errors.New("HTTP status code of response is greater than 202")
 	ErrDoubleSelector  = errors.New("A function with this selector was already registered")
 	ErrReadingFromBody = errors.New("Goquery couldn't read from body")
+	ErrEmptyBody       = errors.New("The body of the response is empty")
 )
 
 func NewCollector() *Collector {
@@ -130,6 +131,10 @@ func (c *Collector) checkRequest(u string, depth int, revisit bool) error {
 }
 
 func (c *Collector) checkHTTPStatusCode(res *response.Response) error {
+	if res.Body == nil {
+		return ErrEmptyBody
+	}
+
 	if res.StatusCode < 203 {
 		return nil
 	}
