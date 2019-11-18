@@ -2,8 +2,9 @@ package growler
 
 import (
 	"sync"
+	"bytes"
 	"errors"
-	"golang.org/x/net/html"
+	"net/url"
 
 	"github.com/PuerkitoBio/goquery"
 
@@ -13,12 +14,12 @@ import (
 
 type Collector struct {
 	UserAgent         string
-	MaxDepth          string
-	store             storage.Storage
+	MaxDepth          int
+	store            *storage.InMemory
 	worker           *httpWorker
 	wg               *sync.WaitGroup
 	lock             *sync.RWMutex
-	onHTMLFunctions []int Callback
+	onHTMLFunctions []Callback
 }
 
 type Callback struct {
@@ -38,6 +39,8 @@ var (
 func NewCollector() *Collector {
 	c := &Collector{}
 	c.Init()
+
+	return c
 }
 
 func (c *Collector) Init() {
@@ -52,14 +55,14 @@ func (c *Collector) Init() {
 }
 
 func (c *Collector) Visit(URL string) error {
-	return c.build(URL, nil, false)
+	return c.build(URL, 0, false)
 }
 
-func (c *Collector) OnHTML(selector string, f func(CollectorHTMLNode)) error {
+func (c *Collector) OnHTML(selector string, f func(CollectorHTMLNode)) {
 	c.lock.Lock()
 
 	if c.onHTMLFunctions == nil {
-		c.onHTMLFunctions = make([]int Callback, 0, 5)
+		c.onHTMLFunctions = make([]Callback, 0, 5)
 	}
 
 	c.onHTMLFunctions = append(c.onHTMLFunctions, Callback{
@@ -83,10 +86,12 @@ func (c *Collector) build(u string, depth int, revisit bool) error {
 	}
 
 	c.wg.Add(1)
-	go c.fetch(u, depth)
+	go c.fetch(pURL, depth)
+
+	return nil
 }
 
-func (c *Collector) fetch(u string, depth int) error {
+func (c *Collector) fetch(u *url.URL, depth int) error {
 	defer c.wg.Done()
 
 	res, err := c.worker.Request(u, depth)
@@ -100,6 +105,8 @@ func (c *Collector) fetch(u string, depth int) error {
 	}
 
 	err = c.handleHTML(res)
+
+	return nil
 }
 
 func (c *Collector) checkRequest(u string, depth int, revisit bool) error {
@@ -122,7 +129,7 @@ func (c *Collector) checkRequest(u string, depth int, revisit bool) error {
 	return nil
 }
 
-func (c *Collector) checkHTTPStatusCode(res response.Response) error {
+func (c *Collector) checkHTTPStatusCode(res *response.Response) error {
 	if res.StatusCode < 203 {
 		return nil
 	}
@@ -130,16 +137,16 @@ func (c *Collector) checkHTTPStatusCode(res response.Response) error {
 	return ErrHTTPStatusCode
 }
 
-func (c *Collector) handleHTML(res response.Response) error {
-	doc, err := goquery.NewDocumentFromReader(res.Body)
+func (c *Collector) handleHTML(res *response.Response) error {
+	doc, err := goquery.NewDocumentFromReader(bytes.NewBuffer(res.Body))
 	if err != nil {
 		return err
 	}
 
-	for _, c := range c.onHTMLFunctions {
-		doc.Find(c.Selector).Each(func(_ int, s *goquery.Selection) {
+	for _, call := range c.onHTMLFunctions {
+		doc.Find(call.Selector).Each(func(_ int, s *goquery.Selection) {
 			for _, n := range s.Nodes {
-				c.Function(CollectorHTMLNode{
+				call.Function(CollectorHTMLNode{
 					Name: n.Data,
 					Collector: c,
 					attributes: n.Attr,
@@ -147,4 +154,6 @@ func (c *Collector) handleHTML(res response.Response) error {
 			}
 	  	})
 	}
+
+	return nil
 }

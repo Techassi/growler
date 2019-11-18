@@ -2,6 +2,7 @@ package growler
 
 import (
 	"sync"
+	"time"
 	"io/ioutil"
 	"net/url"
 	"net/http"
@@ -21,8 +22,8 @@ func (h *httpWorker) Init() {
 	h.lock = &sync.RWMutex{}
 }
 
-func (h *httpWorker) Request(u url.URL, depth int) (*Response, error) {
-	r := http.Request{
+func (h *httpWorker) Request(u *url.URL, depth int) (*response.Response, error) {
+	r := &http.Request{
 		Method: "GET",
 		URL: u,
 		Proto: "HTTP/1.1",
@@ -30,16 +31,21 @@ func (h *httpWorker) Request(u url.URL, depth int) (*Response, error) {
 		ProtoMinor: 1,
 	}
 
-	res, err := h.CLient.Do(r)
+	res, err := h.Client.Do(r)
 	if err != nil {
 		return nil, err
 	}
 
 	defer res.Body.Close()
 
-	return response.Response{
+	b, e := ioutil.ReadAll(res.Body)
+	if e != nil {
+		return nil, err
+	}
+
+	return &response.Response{
 		StatusCode: res.StatusCode,
-		Body: ioutil.ReadAll(res.Body),
-		Header: res.Header,
+		Body: b,
+		Headers: res.Header,
 	}, nil
 }

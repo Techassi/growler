@@ -12,7 +12,7 @@ type CollectorHTMLNode struct {
 
 func (n *CollectorHTMLNode) Attr(attr string) string {
 	for _, a := range n.attributes {
-		if a.Key == k {
+		if a.Key == attr {
 			return a.Val
 		}
 	}

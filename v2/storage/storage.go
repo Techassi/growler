@@ -1,30 +1,29 @@
 package storage
 
 import (
-	"time"
 	"sync"
 )
 
 type InMemory struct {
-	Visited  map[string]bool
-	lock    *sync.RWMutex
+	VisitedLinks  map[string]bool
+	lock         *sync.RWMutex
 }
 
 func (im *InMemory) Init() {
-	im.Visited = make(map[string]bool)
+	im.VisitedLinks = make(map[string]bool)
 	im.lock = &sync.RWMutex{}
 }
 
 func (im *InMemory) Visited(u string) {
 	im.lock.Lock()
-	s.Visited[u] = true
+	im.VisitedLinks[u] = true
 	im.lock.Unlock()
 }
 
-func (im *InMemory) IsVisited(u string) {
-	s.lock.RLock()
-	v := im.Visited[u]
-	s.lock.RUnlock()
+func (im *InMemory) IsVisited(u string) bool {
+	im.lock.RLock()
+	v := im.VisitedLinks[u]
+	im.lock.RUnlock()
 
 	return v
 }
