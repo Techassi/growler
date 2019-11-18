@@ -16,5 +16,6 @@ func (n *CollectorHTMLNode) Attr(attr string) string {
 			return a.Val
 		}
 	}
+
 	return ""
 }
