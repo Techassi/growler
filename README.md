@@ -44,15 +44,36 @@ c.OnHTML("a[href]", func (n growler.CollectorHTMLNode) {
 `OnHTML` expects two parameters, a HTML selector like `a[href]` and a callback function which gets executed for each element found by the provided selector. This callback function needs to be defined as `func (n growler.CollectorHTMLNode)`
 
 ### Customizing the collector
+#### Seeds
+
+To set the seeds use the `Seeds(urls []string)` function:
+
+```golang
+c.Seeds([]string{
+	"https://example.com/",
+	"https://example.org/",
+})
+```
+
 #### Delay
 
 To set a delay (recommended) use the `SetDelay(d int)` function:
 
 ```golang
-c.SetDelay(2)
+c.SetDelay(1)
 ```
 
 The only parameter to be provided is an integer to specify the amount of seconds the delay should last.
+
+#### Duration
+
+To set the total duration of the crawling process use the `SetDuration(d int)` function:
+
+```golang
+c.SetDuration(1)
+```
+
+The only parameter to be provided is an integer to specify the amount of seconds the total duration should last.
 
 #### MaxDepth
 
@@ -63,14 +84,6 @@ c.SetMaxDepth(2)
 ```
 
 The only parameter to be provided is an integer to specify the max depth. Example: example.com/foo/bar is valid, example.com/foo/bar/baz is not and will NOT be crawled.
-
-#### Set the seed / start URL
-
-To set the seed / start URL use the `Visit(url string)` function:
-
-```golang
-c.Visit("https://example.com/")
-```
 
 ### Complete example
 
@@ -88,6 +101,21 @@ c.OnHTML("a[href]", func (n growler.CollectorHTMLNode) {
 c.SetDelay(2)
 c.SetMaxDepth(2)
 
-c.Visit("https://example.com/")
+c.Seeds([]string{
+	"https://example.com/",
+	"https://example.org/",
+})
+
 c.Wait()
 ```
+
+## Performance
+
+*Tested on i7 8770K 6C/12T @ 4.3GHz, 16GB RAM, 1GBit Ethernet*
+
+- ~ 600 MBit/s Throughput
+- ~ 4000 URLs/s
+
+This is the maximum performance without delay and deduplication possible on my machine.
+
+It is probally possible to get even better performance on better hardware, but this not recommended at all due to the immense traffic. Huge amounts of traffic can be interpreted as DDOS attacks.

@@ -22,11 +22,7 @@ func (h *httpWorker) Init() {
 	h.lock = &sync.RWMutex{}
 }
 
-func (h *httpWorker) Request(u *url.URL, delay int) (*response.Response, error) {
-	if delay > 0 {
-		time.Sleep(time.Duration(delay) * time.Second)
-	}
-
+func (h *httpWorker) Request(u *url.URL) (*response.Response, error) {
 	r := &http.Request{
 		Method: "GET",
 		URL: u,

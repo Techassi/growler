@@ -1,7 +1,6 @@
 package growler
 
 import (
-	"os"
 	"sync"
 	"time"
 	"bytes"
@@ -137,7 +136,11 @@ func (c *Collector) build(u string, revisit bool) error {
 func (c *Collector) fetch(u *url.URL) error {
 	defer c.wg.Done()
 
-	res, err := c.worker.Request(u, c.Delay)
+	if c.Delay > 0 {
+		time.Sleep(time.Duration(c.Delay) * time.Second)
+	}
+
+	res, err := c.worker.Request(u)
 	if err != nil {
 		return err
 	}
@@ -155,17 +158,14 @@ func (c *Collector) fetch(u *url.URL) error {
 }
 
 func (c *Collector) checkRequest(u string, revisit bool) (*url.URL, error) {
-	// check if Duration is exceeded
 	if time.Now().Sub(c.startTime).Seconds() > float64(c.Duration) && c.Duration > 0 {
-		os.Exit(1)
+		return nil, ErrDurationExceeded
 	}
 
-	// Check if URL is empty. Throw ErrURLEmpty if so
 	if u == "" {
 		return nil, ErrURLEmpty
 	}
 
-	// Check if depth is valid. Throw ErrDepthInvalid if not
 	if c.MaxDepth < 0 {
 		return nil, ErrDepthInvalid
 	}
@@ -175,13 +175,10 @@ func (c *Collector) checkRequest(u string, revisit bool) (*url.URL, error) {
 		return nil, err
 	}
 
-	// If we don't want to revisit the URL check if we already did. If so throw
-	// ErrAlreadyVisited
 	if !revisit && c.store.IsVisited(pURL) {
 		return nil, ErrAlreadyVisited
 	}
 
-	// Check if depth of current URL is below MaxDepth
 	if strings.Count(pURL.Path, "/") > c.MaxDepth && c.MaxDepth > 0 {
 		return nil, ErrDepthExceeded
 	}
