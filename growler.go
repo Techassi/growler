@@ -149,6 +149,8 @@ func (c *Collector) fetch(u *url.URL) error {
 
 	err = c.handleHTML(res)
 
+	c.store.Visited(u)
+
 	return nil
 }
 
@@ -168,15 +170,15 @@ func (c *Collector) checkRequest(u string, revisit bool) (*url.URL, error) {
 		return nil, ErrDepthInvalid
 	}
 
-	// If we don't want to revisit the URL check if we already did. If so throw
-	// ErrAlreadyVisited
-	if !revisit && c.store.IsVisited(u) {
-		return nil, ErrAlreadyVisited
-	}
-
 	pURL, err := url.Parse(u)
 	if err != nil {
 		return nil, err
+	}
+
+	// If we don't want to revisit the URL check if we already did. If so throw
+	// ErrAlreadyVisited
+	if !revisit && c.store.IsVisited(pURL) {
+		return nil, ErrAlreadyVisited
 	}
 
 	// Check if depth of current URL is below MaxDepth
