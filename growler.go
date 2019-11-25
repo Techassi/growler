@@ -153,9 +153,9 @@ func (c *Collector) fetch(u *url.URL) error {
 
 func (c *Collector) checkRequest(u string, revisit bool) (*url.URL, error) {
 	// check if Duration is exceeded
-	// if time.Now().Sub(c.startTime).Seconds() > float64(c.Duration) && c.Duration > 0 {
-	// 	return nil, ErrDurationExceeded
-	// }
+	if time.Now().Sub(c.startTime).Seconds() > float64(c.Duration) && c.Duration >= 0 {
+		return nil, ErrDurationExceeded
+	}
 
 	// Check if URL is empty. Throw ErrURLEmpty if so
 	if u == "" {
@@ -179,7 +179,7 @@ func (c *Collector) checkRequest(u string, revisit bool) (*url.URL, error) {
 	}
 
 	// Check if depth of current URL is below MaxDepth
-	if strings.Count(pURL.Path, "/") > c.MaxDepth {
+	if strings.Count(pURL.Path, "/") > c.MaxDepth && c.MaxDepth >= 0 {
 		return nil, ErrDepthExceeded
 	}
 
