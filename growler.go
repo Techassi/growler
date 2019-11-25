@@ -2,6 +2,7 @@ package growler
 
 import (
 	"sync"
+	"time"
 	"bytes"
 	"errors"
 	"strings"
@@ -17,6 +18,8 @@ type Collector struct {
 	UserAgent         string
 	MaxDepth          int
 	Delay             int
+	Duration          int
+	startTime         time.Time
 	store            *storage.InMemory
 	worker           *httpWorker
 	wg               *sync.WaitGroup
@@ -30,14 +33,15 @@ type Callback struct {
 }
 
 var (
-	ErrURLEmpty        = errors.New("URL is empty")
-	ErrDepthInvalid    = errors.New("Max depth limit reached or depth < 0")
-	ErrAlreadyVisited  = errors.New("URL already visited")
-	ErrHTTPStatusCode  = errors.New("HTTP status code of response is greater than 202")
-	ErrDoubleSelector  = errors.New("A function with this selector was already registered")
-	ErrReadingFromBody = errors.New("Goquery couldn't read from body")
-	ErrEmptyResponse   = errors.New("The body of the response is empty")
-	ErrDepthExceeded   = errors.New("The depth of the current URL exceeds MaxDepth")
+	ErrURLEmpty         = errors.New("URL is empty")
+	ErrDepthInvalid     = errors.New("Max depth limit reached or depth < 0")
+	ErrAlreadyVisited   = errors.New("URL already visited")
+	ErrHTTPStatusCode   = errors.New("HTTP status code of response is greater than 202")
+	ErrDoubleSelector   = errors.New("A function with this selector was already registered")
+	ErrReadingFromBody  = errors.New("Goquery couldn't read from body")
+	ErrEmptyResponse    = errors.New("The body of the response is empty")
+	ErrDepthExceeded    = errors.New("The depth of the current URL exceeds MaxDepth")
+	ErrDurationExceeded = errors.New("The Duration is exceeded")
 )
 
 func NewCollector() *Collector {
@@ -51,6 +55,7 @@ func (c *Collector) Init() {
 	c.UserAgent = "growler - https://github.com/Techassi/growler"
 	c.MaxDepth = 0
 	c.Delay = 0
+	c.Duration = 0
 	c.store = &storage.InMemory{}
 	c.store.Init()
 	c.worker = &httpWorker{}
@@ -60,7 +65,17 @@ func (c *Collector) Init() {
 }
 
 func (c *Collector) Visit(URL string) error {
+	if c.startTime.IsZero() {
+		c.startTime = time.Now()
+	}
+
 	return c.build(URL, false)
+}
+
+func (c *Collector) Seeds(URLs []string) {
+	for _, URL := range URLs {
+		c.Visit(URL)
+	}
 }
 
 func (c *Collector) OnHTML(selector string, f func(CollectorHTMLNode)) {
@@ -92,6 +107,14 @@ func (c *Collector) SetMaxDepth(d int) {
 	}
 
 	c.MaxDepth = d
+}
+
+func (c *Collector) SetDuration(d int) {
+	if d <= 0 {
+		return
+	}
+
+	c.Duration = d
 }
 
 func (c *Collector) Wait() {
@@ -129,6 +152,11 @@ func (c *Collector) fetch(u *url.URL) error {
 }
 
 func (c *Collector) checkRequest(u string, revisit bool) (*url.URL, error) {
+	// check if Duration is exceeded
+	if time.Now().Sub(c.startTime).Seconds() == float64(c.Duration) {
+		return nil, ErrDurationExceeded
+	}
+
 	// Check if URL is empty. Throw ErrURLEmpty if so
 	if u == "" {
 		return nil, ErrURLEmpty
