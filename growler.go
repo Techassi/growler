@@ -1,6 +1,7 @@
 package growler
 
 import (
+	"os"
 	"sync"
 	"time"
 	"bytes"
