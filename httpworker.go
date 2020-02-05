@@ -1,11 +1,11 @@
 package growler
 
 import (
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"sync"
 	"time"
-	"io/ioutil"
-	"net/url"
-	"net/http"
 
 	"github.com/Techassi/growler/response"
 )
@@ -24,9 +24,9 @@ func (h *httpWorker) Init() {
 
 func (h *httpWorker) Request(u *url.URL) (*response.Response, error) {
 	r := &http.Request{
-		Method: "GET",
-		URL: u,
-		Proto: "HTTP/1.1",
+		Method:     "GET",
+		URL:        u,
+		Proto:      "HTTP/1.1",
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 	}
@@ -45,7 +45,7 @@ func (h *httpWorker) Request(u *url.URL) (*response.Response, error) {
 
 	return &response.Response{
 		StatusCode: res.StatusCode,
-		Body: b,
-		Headers: res.Header,
+		Body:       b,
+		Headers:    res.Header,
 	}, nil
 }

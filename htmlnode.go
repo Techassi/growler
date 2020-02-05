@@ -5,8 +5,8 @@ import (
 )
 
 type CollectorHTMLNode struct {
-	Name         string
-	Collector   *Collector
+	Name       string
+	Collector  *Collector
 	attributes []html.Attribute
 }
 

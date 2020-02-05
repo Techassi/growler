@@ -5,7 +5,7 @@ import (
 )
 
 type Response struct {
-	StatusCode   int
+	StatusCode int
 	Body       []byte
-	Headers      http.Header
+	Headers    http.Header
 }

@@ -44,6 +44,7 @@ c.OnHTML("a[href]", func (n growler.CollectorHTMLNode) {
 `OnHTML` expects two parameters, a HTML selector like `a[href]` and a callback function which gets executed for each element found by the provided selector. This callback function needs to be defined as `func (n growler.CollectorHTMLNode)`
 
 ### Customizing the collector
+
 #### Seeds
 
 To set the seeds use the `Seeds(urls []string)` function:
@@ -111,10 +112,10 @@ c.Wait()
 
 ## Performance
 
-*Tested on i7 8770K 6C/12T @ 4.3GHz, 16GB RAM, 1GBit Ethernet*
+_Tested on i7 8770K 6C/12T @ 4.3GHz, 16GB RAM, 1GBit Ethernet_
 
-- ~ 600 MBit/s Throughput
-- ~ 4000 URLs/s
+-   ~ 600 MBit/s Throughput
+-   ~ 4000 URLs/s
 
 This is the maximum performance without delay and deduplication possible on my machine.
 

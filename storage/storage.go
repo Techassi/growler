@@ -1,12 +1,12 @@
 package storage
 
 import (
-	"sync"
 	"net/url"
+	"sync"
 )
 
 type InMemory struct {
-	VisitedLinks  map[*url.URL]bool
+	VisitedLinks map[*url.URL]bool
 	lock         *sync.RWMutex
 }
 

@@ -1,34 +1,34 @@
 package growler
 
 import (
-	"sync"
-	"time"
 	"bytes"
 	"errors"
-	"strings"
 	"net/url"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 
-	"github.com/Techassi/growler/storage"
 	"github.com/Techassi/growler/response"
+	"github.com/Techassi/growler/storage"
 )
 
 type Collector struct {
-	UserAgent         string
-	MaxDepth          int
-	Delay             int
-	Duration          int
-	startTime         time.Time
-	store            *storage.InMemory
-	worker           *httpWorker
-	wg               *sync.WaitGroup
-	lock             *sync.RWMutex
+	UserAgent       string
+	MaxDepth        int
+	Delay           int
+	Duration        int
+	startTime       time.Time
+	store           *storage.InMemory
+	worker          *httpWorker
+	wg              *sync.WaitGroup
+	lock            *sync.RWMutex
 	onHTMLFunctions []Callback
 }
 
 type Callback struct {
-	Function func (CollectorHTMLNode)
+	Function func(CollectorHTMLNode)
 	Selector string
 }
 
@@ -208,12 +208,12 @@ func (c *Collector) handleHTML(res *response.Response) error {
 		doc.Find(call.Selector).Each(func(_ int, s *goquery.Selection) {
 			for _, n := range s.Nodes {
 				call.Function(CollectorHTMLNode{
-					Name: n.Data,
-					Collector: c,
+					Name:       n.Data,
+					Collector:  c,
 					attributes: n.Attr,
 				})
 			}
-	  	})
+		})
 	}
 
 	return nil
